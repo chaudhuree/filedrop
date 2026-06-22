@@ -7,6 +7,7 @@ export interface RoomDevice {
   colorHash: string;
   roomId: string;
   joinedAt: number;
+  avatar?: string;
 }
 
 export interface Room {

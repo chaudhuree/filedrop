@@ -4,6 +4,14 @@ exports.setupSignaling = setupSignaling;
 const devices_1 = require("./devices");
 const rooms_1 = require("./rooms");
 const socketToDevice = new Map();
+const AVAILABLE_AVATARS = [
+    '/female_one.png',
+    '/female_two.png',
+    '/female_three.png',
+    '/male_one.png',
+    '/male_two.png',
+    '/male_three.png',
+];
 function setupSignaling(io) {
     io.on('connection', (socket) => {
         const userAgent = socket.handshake.headers['user-agent'] || '';
@@ -13,6 +21,26 @@ function setupSignaling(io) {
         // ── Join Room ──────────────────────────────────────────────────────────
         socket.on('join-room', (payload) => {
             const { device } = payload;
+            // Find unused avatar in the current room
+            const existingPeers = (0, rooms_1.getRoomPeers)(roomId);
+            const usedAvatars = new Set(existingPeers.map((p) => p.avatar).filter(Boolean));
+            let assignedAvatar = '';
+            for (const avatar of AVAILABLE_AVATARS) {
+                if (!usedAvatars.has(avatar)) {
+                    assignedAvatar = avatar;
+                    break;
+                }
+            }
+            // Fallback: If more than 6 devices, pick one based on ID hash
+            if (!assignedAvatar) {
+                const devId = device.id || socket.id;
+                let hash = 0;
+                for (let i = 0; i < devId.length; i++) {
+                    hash = devId.charCodeAt(i) + ((hash << 5) - hash);
+                }
+                const index = Math.abs(hash) % AVAILABLE_AVATARS.length;
+                assignedAvatar = AVAILABLE_AVATARS[index];
+            }
             // Generate server-side defaults if client didn't provide them
             const roomDevice = {
                 id: device.id || socket.id,
@@ -23,6 +51,7 @@ function setupSignaling(io) {
                 colorHash: device.colorHash || (0, devices_1.generateColorHash)(device.id || socket.id),
                 roomId,
                 joinedAt: Date.now(),
+                avatar: assignedAvatar,
             };
             // Track socket → device mapping
             socketToDevice.set(socket.id, { deviceId: roomDevice.id, roomId });
@@ -101,6 +130,7 @@ function peerToDeviceInfo(device) {
         browser: device.browser,
         os: device.os,
         colorHash: device.colorHash,
+        avatar: device.avatar,
     };
 }
 //# sourceMappingURL=signaling.js.map

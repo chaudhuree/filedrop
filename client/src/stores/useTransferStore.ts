@@ -16,9 +16,28 @@ interface TransferState {
   clearHistory: () => void;
 }
 
+const SAVE_HISTORY_KEY = 'localdrop-transfer-history';
+
+const loadHistory = (): Transfer[] => {
+  try {
+    const data = localStorage.getItem(SAVE_HISTORY_KEY);
+    return data ? JSON.parse(data) : [];
+  } catch {
+    return [];
+  }
+};
+
+const saveHistory = (history: Transfer[]) => {
+  try {
+    localStorage.setItem(SAVE_HISTORY_KEY, JSON.stringify(history));
+  } catch (err) {
+    console.error('Failed to save transfer history', err);
+  }
+};
+
 export const useTransferStore = create<TransferState>((set, get) => ({
   activeTransfers: new Map(),
-  transferHistory: [],
+  transferHistory: loadHistory(),
   incomingRequests: [],
 
   addTransfer: (transfer) => {
@@ -64,9 +83,11 @@ export const useTransferStore = create<TransferState>((set, get) => ({
           endTime: Date.now(),
         };
         activeTransfers.delete(id);
+        const nextHistory = [completed, ...state.transferHistory].slice(0, 50);
+        saveHistory(nextHistory);
         return {
           activeTransfers,
-          transferHistory: [completed, ...state.transferHistory].slice(0, 50),
+          transferHistory: nextHistory,
         };
       }
       return { activeTransfers };
@@ -84,9 +105,11 @@ export const useTransferStore = create<TransferState>((set, get) => ({
           endTime: Date.now(),
         };
         activeTransfers.delete(id);
+        const nextHistory = [cancelled, ...state.transferHistory].slice(0, 50);
+        saveHistory(nextHistory);
         return {
           activeTransfers,
-          transferHistory: [cancelled, ...state.transferHistory].slice(0, 50),
+          transferHistory: nextHistory,
         };
       }
       return { activeTransfers };
@@ -104,9 +127,11 @@ export const useTransferStore = create<TransferState>((set, get) => ({
           endTime: Date.now(),
         };
         activeTransfers.delete(id);
+        const nextHistory = [failed, ...state.transferHistory].slice(0, 50);
+        saveHistory(nextHistory);
         return {
           activeTransfers,
-          transferHistory: [failed, ...state.transferHistory].slice(0, 50),
+          transferHistory: nextHistory,
         };
       }
       return { activeTransfers };
@@ -125,5 +150,8 @@ export const useTransferStore = create<TransferState>((set, get) => ({
     }));
   },
 
-  clearHistory: () => set({ transferHistory: [] }),
+  clearHistory: () => {
+    saveHistory([]);
+    set({ transferHistory: [] });
+  },
 }));

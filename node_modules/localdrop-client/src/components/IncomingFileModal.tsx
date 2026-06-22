@@ -55,6 +55,7 @@ export default function IncomingFileModal() {
               colorHash={peer.colorHash}
               name={peer.name}
               size="lg"
+              avatar={peer.avatar}
             />
           )}
           <p className="mt-3 font-semibold text-gray-800 dark:text-gray-100">

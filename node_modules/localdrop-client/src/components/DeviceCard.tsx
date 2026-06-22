@@ -80,6 +80,7 @@ export default function DeviceCard({ device, onSendFile }: DeviceCardProps) {
         name={device.name}
         size="lg"
         online={true}
+        avatar={device.avatar}
       />
 
       <div className="text-center min-w-0 w-full">

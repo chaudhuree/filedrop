@@ -36,6 +36,15 @@ interface SignalPayload {
 
 const socketToDevice = new Map<string, { deviceId: string; roomId: string }>();
 
+const AVAILABLE_AVATARS = [
+  '/female_one.png',
+  '/female_two.png',
+  '/female_three.png',
+  '/male_one.png',
+  '/male_two.png',
+  '/male_three.png',
+];
+
 export function setupSignaling(io: Server): void {
   io.on('connection', (socket: Socket) => {
     const userAgent = socket.handshake.headers['user-agent'] || '';
@@ -51,6 +60,28 @@ export function setupSignaling(io: Server): void {
     socket.on('join-room', (payload: JoinPayload) => {
       const { device } = payload;
 
+      // Find unused avatar in the current room
+      const existingPeers = getRoomPeers(roomId);
+      const usedAvatars = new Set(existingPeers.map((p) => p.avatar).filter(Boolean));
+      let assignedAvatar = '';
+      for (const avatar of AVAILABLE_AVATARS) {
+        if (!usedAvatars.has(avatar)) {
+          assignedAvatar = avatar;
+          break;
+        }
+      }
+
+      // Fallback: If more than 6 devices, pick one based on ID hash
+      if (!assignedAvatar) {
+        const devId = device.id || socket.id;
+        let hash = 0;
+        for (let i = 0; i < devId.length; i++) {
+          hash = devId.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        const index = Math.abs(hash) % AVAILABLE_AVATARS.length;
+        assignedAvatar = AVAILABLE_AVATARS[index];
+      }
+
       // Generate server-side defaults if client didn't provide them
       const roomDevice: RoomDevice = {
         id: device.id || socket.id,
@@ -61,6 +92,7 @@ export function setupSignaling(io: Server): void {
         colorHash: device.colorHash || generateColorHash(device.id || socket.id),
         roomId,
         joinedAt: Date.now(),
+        avatar: assignedAvatar,
       };
 
       // Track socket → device mapping
@@ -157,5 +189,6 @@ function peerToDeviceInfo(device: RoomDevice) {
     browser: device.browser,
     os: device.os,
     colorHash: device.colorHash,
+    avatar: device.avatar,
   };
 }

@@ -5,4 +5,5 @@ export interface Device {
   browser: string;
   os: string;
   colorHash: string;
+  avatar?: string;
 }

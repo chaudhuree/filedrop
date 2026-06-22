@@ -16,7 +16,9 @@ class SocketService {
   connect(): Socket {
     if (this.socket?.connected) return this.socket;
 
-    const url = import.meta.env.PROD ? window.location.origin : '';
+    const url = import.meta.env.PROD
+      ? (import.meta.env.VITE_WS_URL as string || window.location.origin)
+      : '';
 
     this.socket = io(url, {
       transports: ['websocket', 'polling'],

@@ -7,6 +7,7 @@ interface DeviceAvatarProps {
   name: string;
   size?: 'sm' | 'md' | 'lg';
   online?: boolean;
+  avatar?: string;
 }
 
 const sizeClasses = {
@@ -33,19 +34,30 @@ export default function DeviceAvatar({
   name,
   size = 'md',
   online = true,
+  avatar,
 }: DeviceAvatarProps) {
   const Icon = DeviceIcons[deviceType];
 
   return (
     <div className="relative inline-flex">
       <div
-        className={`${sizeClasses[size]} rounded-2xl flex items-center justify-center transition-all duration-300`}
+        className={`${sizeClasses[size]} rounded-2xl overflow-hidden flex items-center justify-center transition-all duration-300`}
         style={{
-          background: `linear-gradient(135deg, ${colorHash}, ${adjustHue(colorHash, 40)})`,
+          background: avatar
+            ? 'transparent'
+            : `linear-gradient(135deg, ${colorHash}, ${adjustHue(colorHash, 40)})`,
           boxShadow: `0 4px 15px ${colorHash}40`,
         }}
       >
-        <Icon size={iconSizes[size]} className="text-white drop-shadow-sm" />
+        {avatar ? (
+          <img
+            src={avatar}
+            alt={name}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <Icon size={iconSizes[size]} className="text-white drop-shadow-sm" />
+        )}
       </div>
       {online && (
         <span className="absolute -bottom-0.5 -right-0.5 flex h-3.5 w-3.5">

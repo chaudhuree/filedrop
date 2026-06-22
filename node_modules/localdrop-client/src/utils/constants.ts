@@ -20,5 +20,15 @@ export const AVATAR_LIST = {
     two: 'https://res.cloudinary.com/djftsbsuu/image/upload/v1782120125/male_two_h6jdvb.png',
     three: 'https://res.cloudinary.com/djftsbsuu/image/upload/v1782120125/male_three_bfensg.png',
   },
+  device: {
+    one: "https://res.cloudinary.com/djftsbsuu/image/upload/v1782127255/ipad-four_prg7zr.png",
+    two: "https://res.cloudinary.com/djftsbsuu/image/upload/v1782127255/mac-mini_vzsspc.png",
+    three: "https://res.cloudinary.com/djftsbsuu/image/upload/v1782127255/desktop-one_gkqe8t.png",
+    four: "https://res.cloudinary.com/djftsbsuu/image/upload/v1782127255/laptop-one_tujhhs.png",
+    five: "https://res.cloudinary.com/djftsbsuu/image/upload/v1782127255/laptop-two_tg4zaw.png",
+    six: "https://res.cloudinary.com/djftsbsuu/image/upload/v1782127255/ipad-one_yatazv.png",
+    seven: "https://res.cloudinary.com/djftsbsuu/image/upload/v1782127255/ipad-three_jof5o4.png"
+
+  }
 };
 

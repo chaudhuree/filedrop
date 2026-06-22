@@ -35,6 +35,8 @@ export default function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
 
   const femaleAvatars = Object.entries(AVATAR_LIST.female);
   const maleAvatars = Object.entries(AVATAR_LIST.male);
+  const deviceAvatars = Object.entries(AVATAR_LIST.device);
+
 
   return (
     <div
@@ -174,6 +176,33 @@ export default function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
                         }`}
                     >
                       <img src={url} alt={`Male ${key}`} className="w-full h-full object-cover" />
+                      {selectedAvatar === url && (
+                        <div className="absolute inset-0 bg-primary-500/15 flex items-end justify-end p-1">
+                          <div className="bg-primary-500 text-white p-0.5 rounded-full shadow-md">
+                            <Check size={10} strokeWidth={3} />
+                          </div>
+                        </div>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Device Category */}
+              <div className="flex flex-col gap-1.5">
+                <span className="text-[11px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide">Devices</span>
+                <div className="grid grid-cols-3 gap-2.5">
+                  {deviceAvatars.map(([key, url]) => (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => setSelectedAvatar(url)}
+                      className={`relative aspect-square rounded-xl overflow-hidden border-2 transition-all duration-200 hover:scale-105 active:scale-95 ${selectedAvatar === url
+                        ? 'border-primary-500 shadow-lg shadow-primary-500/25 ring-2 ring-primary-500/20'
+                        : 'border-gray-200 dark:border-white/10 hover:border-primary-300 dark:hover:border-primary-600'
+                        }`}
+                    >
+                      <img src={url} alt={`Device ${key}`} className="w-full h-full object-cover" />
                       {selectedAvatar === url && (
                         <div className="absolute inset-0 bg-primary-500/15 flex items-end justify-end p-1">
                           <div className="bg-primary-500 text-white p-0.5 rounded-full shadow-md">

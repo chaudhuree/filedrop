@@ -14,7 +14,7 @@ export default function DeviceGrid({ onSendFile }: DeviceGridProps) {
 
   if (!connected) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 animate-fade-in" id="connecting-state">
+      <div className="flex-grow flex flex-col items-center justify-center py-8 animate-fade-in" id="connecting-state">
         <div className="relative mb-6">
           <div className="w-20 h-20 rounded-full bg-primary-500/10 flex items-center justify-center">
             <Wifi size={32} className="text-primary-500 animate-pulse" />
@@ -33,7 +33,7 @@ export default function DeviceGrid({ onSendFile }: DeviceGridProps) {
 
   if (peerList.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 animate-fade-in" id="empty-state">
+      <div className="flex-grow flex flex-col items-center justify-center py-8 animate-fade-in" id="empty-state">
         <div className="relative mb-6">
           <div className="w-20 h-20 rounded-full bg-primary-500/10 flex items-center justify-center">
             <Search size={32} className="text-primary-400" />

@@ -353,7 +353,7 @@ export default function App() {
   return (
     <div
       ref={dropRef}
-      className={`min-h-dvh bg-mesh ${isDragging ? 'drop-zone-active' : ''}`}
+      className={`min-h-dvh flex flex-col bg-mesh ${isDragging ? 'drop-zone-active' : ''}`}
     >
       {/* Hidden file input */}
       <input
@@ -371,7 +371,7 @@ export default function App() {
       />
 
       {/* Main Content */}
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
+      <main className="flex-grow flex flex-col max-w-6xl w-full mx-auto px-4 sm:px-6 py-8">
         <DeviceGrid onSendFile={handleSendFile} />
 
         {/* Action Bar */}
@@ -415,7 +415,7 @@ export default function App() {
       </main>
 
       {/* Footer */}
-      <footer className="text-center py-6 text-xs text-gray-400 dark:text-gray-600">
+      <footer className="text-center py-6 text-xs text-gray-400 dark:text-gray-600 mt-auto">
         <p>End-to-end encrypted · Peer-to-peer · No data stored on server</p>
       </footer>
 

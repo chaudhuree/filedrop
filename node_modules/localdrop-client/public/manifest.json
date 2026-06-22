@@ -1,0 +1,19 @@
+{
+  "name": "LocalDrop",
+  "short_name": "LocalDrop",
+  "description": "Share files and clipboard content instantly with devices on your local network",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a1a",
+  "theme_color": "#6366f1",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["utilities", "productivity"]
+}

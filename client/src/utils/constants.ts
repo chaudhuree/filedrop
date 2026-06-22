@@ -1,0 +1,9 @@
+export const CHUNK_SIZE = 64 * 1024; // 64KB
+export const MAX_BUFFER_SIZE = 1024 * 1024; // 1MB
+export const SPEED_SAMPLE_INTERVAL = 500; // ms
+export const TOAST_DURATION = 4000; // ms
+export const RECONNECT_INTERVAL = 3000; // ms
+export const MAX_RECONNECT_ATTEMPTS = 10;
+export const DEVICE_ID_KEY = 'localdrop-device-id';
+export const DEVICE_NAME_KEY = 'localdrop-device-name';
+export const THEME_KEY = 'localdrop-theme';

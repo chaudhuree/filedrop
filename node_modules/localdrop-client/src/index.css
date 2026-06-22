@@ -1,0 +1,248 @@
+@import "tailwindcss";
+
+/* ─── Design Tokens ──────────────────────────────────────────────────────── */
+@theme {
+  --color-primary-50: oklch(0.97 0.02 270);
+  --color-primary-100: oklch(0.93 0.04 270);
+  --color-primary-200: oklch(0.87 0.08 270);
+  --color-primary-300: oklch(0.78 0.12 270);
+  --color-primary-400: oklch(0.68 0.17 270);
+  --color-primary-500: oklch(0.58 0.22 270);
+  --color-primary-600: oklch(0.50 0.22 270);
+  --color-primary-700: oklch(0.44 0.19 270);
+  --color-primary-800: oklch(0.37 0.15 270);
+  --color-primary-900: oklch(0.31 0.12 270);
+  --color-primary-950: oklch(0.22 0.09 270);
+
+  --color-accent-400: oklch(0.75 0.18 160);
+  --color-accent-500: oklch(0.65 0.20 160);
+  --color-accent-600: oklch(0.55 0.18 160);
+
+  --color-surface-50: oklch(0.985 0.002 270);
+  --color-surface-100: oklch(0.965 0.004 270);
+  --color-surface-200: oklch(0.93 0.006 270);
+  --color-surface-700: oklch(0.28 0.02 270);
+  --color-surface-800: oklch(0.22 0.025 270);
+  --color-surface-850: oklch(0.18 0.02 270);
+  --color-surface-900: oklch(0.15 0.02 270);
+  --color-surface-950: oklch(0.10 0.015 270);
+
+  --font-family-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+
+  --animate-pulse-ring: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  --animate-slide-up: slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  --animate-slide-down: slide-down 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  --animate-fade-in: fade-in 0.2s ease-out;
+  --animate-scale-in: scale-in 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  --animate-spin-slow: spin 3s linear infinite;
+  --animate-bounce-subtle: bounce-subtle 2s ease-in-out infinite;
+  --animate-shimmer: shimmer 2s linear infinite;
+}
+
+/* ─── Keyframes ──────────────────────────────────────────────────────────── */
+@keyframes pulse-ring {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.05); opacity: 0.8; }
+}
+
+@keyframes slide-up {
+  from { transform: translateY(16px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes slide-down {
+  from { transform: translateY(-16px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scale-in {
+  from { transform: scale(0.95); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+@keyframes bounce-subtle {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes progress-bar {
+  0% { width: 0%; }
+  100% { width: 100%; }
+}
+
+@keyframes ripple {
+  0% { transform: scale(0); opacity: 0.5; }
+  100% { transform: scale(4); opacity: 0; }
+}
+
+/* ─── Base Styles ────────────────────────────────────────────────────────── */
+:root {
+  color-scheme: light dark;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100dvh;
+  overflow-x: hidden;
+}
+
+/* Light mode */
+body {
+  background: linear-gradient(135deg, #f8f9ff 0%, #e8ecff 50%, #f0e8ff 100%);
+  color: #1a1a2e;
+}
+
+/* Dark mode */
+.dark body,
+body.dark {
+  background: linear-gradient(135deg, #0a0a1a 0%, #111128 50%, #0d0d20 100%);
+  color: #e8e8f0;
+}
+
+/* ─── Glassmorphism ──────────────────────────────────────────────────────── */
+.glass {
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.dark .glass {
+  background: rgba(20, 20, 40, 0.72);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(16px) saturate(150%);
+  -webkit-backdrop-filter: blur(16px) saturate(150%);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06), 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.dark .glass-card {
+  background: rgba(25, 25, 50, 0.6);
+  backdrop-filter: blur(16px) saturate(150%);
+  -webkit-backdrop-filter: blur(16px) saturate(150%);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* ─── Scrollbar ──────────────────────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(100, 100, 140, 0.3);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 100, 140, 0.5);
+}
+
+/* ─── Focus Styles ───────────────────────────────────────────────────────── */
+*:focus-visible {
+  outline: 2px solid var(--color-primary-500);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ─── Selection ──────────────────────────────────────────────────────────── */
+::selection {
+  background: var(--color-primary-300);
+  color: white;
+}
+
+.dark ::selection {
+  background: var(--color-primary-600);
+  color: white;
+}
+
+/* ─── Utilities ──────────────────────────────────────────────────────────── */
+.text-gradient {
+  background: linear-gradient(135deg, var(--color-primary-400), var(--color-accent-400));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.bg-mesh {
+  background-image:
+    radial-gradient(at 40% 20%, rgba(99, 102, 241, 0.08) 0px, transparent 50%),
+    radial-gradient(at 80% 0%, rgba(139, 92, 246, 0.06) 0px, transparent 50%),
+    radial-gradient(at 0% 50%, rgba(59, 130, 246, 0.06) 0px, transparent 50%),
+    radial-gradient(at 80% 50%, rgba(236, 72, 153, 0.04) 0px, transparent 50%),
+    radial-gradient(at 0% 100%, rgba(34, 197, 94, 0.04) 0px, transparent 50%);
+}
+
+.dark .bg-mesh {
+  background-image:
+    radial-gradient(at 40% 20%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
+    radial-gradient(at 80% 0%, rgba(139, 92, 246, 0.12) 0px, transparent 50%),
+    radial-gradient(at 0% 50%, rgba(59, 130, 246, 0.10) 0px, transparent 50%),
+    radial-gradient(at 80% 50%, rgba(236, 72, 153, 0.06) 0px, transparent 50%),
+    radial-gradient(at 0% 100%, rgba(34, 197, 94, 0.06) 0px, transparent 50%);
+}
+
+/* ─── Drop Zone ──────────────────────────────────────────────────────────── */
+.drop-zone-active {
+  position: relative;
+}
+
+.drop-zone-active::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  border: 3px dashed var(--color-primary-400);
+  border-radius: 16px;
+  background: rgba(99, 102, 241, 0.08);
+  z-index: 9999;
+  pointer-events: none;
+  animation: fade-in 0.2s ease-out;
+}
+
+/* ─── Modal Backdrop ─────────────────────────────────────────────────────── */
+.modal-backdrop {
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.dark .modal-backdrop {
+  background: rgba(0, 0, 0, 0.6);
+}
+
+/* ─── Transition Defaults ────────────────────────────────────────────────── */
+.transition-default {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.transition-spring {
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}

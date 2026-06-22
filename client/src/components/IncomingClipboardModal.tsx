@@ -193,11 +193,18 @@ export default function IncomingClipboardModal() {
           display: flex; align-items: center; justify-content: center; gap: 0.5rem;
           padding: 0.625rem 1rem; border-radius: 0.75rem;
           font-size: 0.875rem; font-weight: 500;
-          color: #6b7280; transition: all 0.2s;
+          color: #4b5563;
+          background: #f3f4f6;
+          border: 1px solid #e5e7eb;
+          transition: all 0.2s;
         }
-        .dark .btn-secondary { color: #9ca3af; }
-        .btn-secondary:hover { background: rgba(0,0,0,0.05); }
-        .dark .btn-secondary:hover { background: rgba(255,255,255,0.05); }
+        .dark .btn-secondary {
+          color: #9ca3af;
+          background: rgba(255,255,255,0.05);
+          border-color: rgba(255,255,255,0.08);
+        }
+        .btn-secondary:hover { background: #e5e7eb; }
+        .dark .btn-secondary:hover { background: rgba(255,255,255,0.1); }
       `}</style>
     </div>
   );

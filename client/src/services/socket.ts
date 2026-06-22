@@ -72,6 +72,10 @@ class SocketService {
     this.socket?.emit('update-name', { name });
   }
 
+  updateAvatar(avatar: string): void {
+    this.socket?.emit('update-avatar', { avatar });
+  }
+
   on(event: string, callback: EventCallback): void {
     if (!this.listeners.has(event)) {
       this.listeners.set(event, new Set());

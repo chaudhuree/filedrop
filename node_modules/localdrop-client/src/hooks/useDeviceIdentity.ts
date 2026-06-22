@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { DEVICE_ID_KEY, DEVICE_NAME_KEY } from '../utils/constants';
+import { DEVICE_ID_KEY, DEVICE_NAME_KEY, DEVICE_AVATAR_KEY } from '../utils/constants';
 import { detectDeviceType, detectBrowser, detectOS, generateColorHash } from '../utils/deviceDetect';
 import type { Device } from '../types/device';
 
@@ -12,6 +12,7 @@ export function useDeviceIdentity(): Device | null {
   useEffect(() => {
     let id = localStorage.getItem(DEVICE_ID_KEY);
     const savedName = localStorage.getItem(DEVICE_NAME_KEY);
+    const savedAvatar = localStorage.getItem(DEVICE_AVATAR_KEY);
 
     if (!id) {
       id = `device-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -25,6 +26,7 @@ export function useDeviceIdentity(): Device | null {
       browser: detectBrowser(),
       os: detectOS(),
       colorHash: generateColorHash(id),
+      avatar: savedAvatar || undefined,
     };
 
     setDevice(deviceInfo);

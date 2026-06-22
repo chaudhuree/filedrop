@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Wifi, WifiOff, Edit3, Check, X, QrCode, History, Clipboard, Menu, Sun, Moon, Monitor } from 'lucide-react';
+import { Wifi, WifiOff, Edit3, QrCode, History, Clipboard, Menu, Sun, Moon, Monitor } from 'lucide-react';
 import ThemeToggle from './ThemeToggle';
 import { useDeviceStore } from '../stores/useDeviceStore';
 import { useClipboardStore } from '../stores/useClipboardStore';
@@ -8,29 +8,14 @@ import { useThemeStore } from '../stores/useThemeStore';
 interface HeaderProps {
   onShowQR: () => void;
   onShowHistory: () => void;
+  onShowProfile: () => void;
 }
 
-export default function Header({ onShowQR, onShowHistory }: HeaderProps) {
-  const { myDevice, connected, updateMyName } = useDeviceStore();
+export default function Header({ onShowQR, onShowHistory, onShowProfile }: HeaderProps) {
+  const { myDevice, connected } = useDeviceStore();
   const togglePanel = useClipboardStore((s) => s.togglePanel);
   const { theme, setTheme } = useThemeStore();
-  const [editing, setEditing] = useState(false);
-  const [editName, setEditName] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
-
-  const startEditing = () => {
-    setEditName(myDevice?.name || '');
-    setEditing(true);
-  };
-
-  const saveName = () => {
-    if (editName.trim()) {
-      updateMyName(editName.trim());
-    }
-    setEditing(false);
-  };
-
-  const cancelEdit = () => setEditing(false);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -67,32 +52,29 @@ export default function Header({ onShowQR, onShowHistory }: HeaderProps) {
               <span className="text-gradient">LocalDrop</span>
             </h1>
             <div className="flex items-center gap-2">
-              {editing ? (
-                <div className="flex items-center gap-1">
-                  <input
-                    type="text"
-                    value={editName}
-                    onChange={(e) => setEditName(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && saveName()}
-                    className="text-xs bg-white/50 dark:bg-white/10 px-2 py-0.5 rounded border border-primary-300 dark:border-primary-600 outline-none w-28"
-                    autoFocus
-                    maxLength={24}
-                  />
-                  <button onClick={saveName} className="text-green-500 hover:text-green-400 p-0.5">
-                    <Check size={12} />
-                  </button>
-                  <button onClick={cancelEdit} className="text-red-400 hover:text-red-300 p-0.5">
-                    <X size={12} />
-                  </button>
-                </div>
-              ) : (
+              {myDevice && (
                 <button
-                  onClick={startEditing}
-                  className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 hover:text-primary-500 dark:hover:text-primary-400 transition-colors"
-                  title="Click to edit your name"
+                  onClick={onShowProfile}
+                  className="flex items-center gap-2 px-2 py-0.5 rounded-lg bg-white/30 dark:bg-white/5 border border-gray-200/50 dark:border-white/5 hover:bg-white/50 dark:hover:bg-white/10 hover:border-primary-500/30 transition-all text-left group"
+                  title="Edit profile & avatar"
+                  id="profile-edit-btn"
                 >
-                  <span className="truncate max-w-[120px]">{myDevice?.name || 'Connecting...'}</span>
-                  <Edit3 size={10} />
+                  <div className="w-5 h-5 rounded-full overflow-hidden flex-shrink-0 bg-primary-500/10 flex items-center justify-center border border-gray-200/30 dark:border-white/10">
+                    {myDevice.avatar ? (
+                      <img src={myDevice.avatar} alt={myDevice.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <div
+                        className="w-full h-full"
+                        style={{
+                          background: `linear-gradient(135deg, ${myDevice.colorHash}, #6366f1)`,
+                        }}
+                      />
+                    )}
+                  </div>
+                  <span className="text-xs font-semibold text-gray-600 dark:text-gray-300 group-hover:text-primary-500 dark:group-hover:text-primary-400 truncate max-w-[90px] transition-colors">
+                    {myDevice.name}
+                  </span>
+                  <Edit3 size={9} className="text-gray-400 group-hover:text-primary-500 dark:group-hover:text-primary-400 transition-colors" />
                 </button>
               )}
             </div>
@@ -103,11 +85,10 @@ export default function Header({ onShowQR, onShowHistory }: HeaderProps) {
         <div className="hidden sm:flex items-center gap-2">
           {/* Connection Status */}
           <div
-            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
-              connected
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${connected
                 ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10'
                 : 'text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-500/10'
-            }`}
+              }`}
             id="connection-status"
           >
             {connected ? <Wifi size={14} /> : <WifiOff size={14} />}
@@ -151,11 +132,10 @@ export default function Header({ onShowQR, onShowHistory }: HeaderProps) {
         <div className="flex sm:hidden items-center gap-2">
           {/* Connection Status Icon Only */}
           <div
-            className={`flex items-center justify-center p-2 rounded-lg text-xs font-medium transition-all ${
-              connected
+            className={`flex items-center justify-center p-2 rounded-lg text-xs font-medium transition-all ${connected
                 ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10'
                 : 'text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-500/10'
-            }`}
+              }`}
             title={connected ? 'Connected' : 'Offline'}
           >
             {connected ? <Wifi size={16} /> : <WifiOff size={16} />}
@@ -215,37 +195,34 @@ export default function Header({ onShowQR, onShowHistory }: HeaderProps) {
             <div className="px-3 py-1.5 text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider select-none">
               Theme Options
             </div>
-            
+
             <div className="flex items-center justify-around px-2 pb-1.5">
               <button
                 onClick={() => setTheme('light')}
-                className={`p-1.5 rounded-md transition-colors ${
-                  theme === 'light'
+                className={`p-1.5 rounded-md transition-colors ${theme === 'light'
                     ? 'bg-primary-500 text-white shadow-sm'
                     : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5'
-                }`}
+                  }`}
                 title="Light Theme"
               >
                 <Sun size={15} />
               </button>
               <button
                 onClick={() => setTheme('dark')}
-                className={`p-1.5 rounded-md transition-colors ${
-                  theme === 'dark'
+                className={`p-1.5 rounded-md transition-colors ${theme === 'dark'
                     ? 'bg-primary-500 text-white shadow-sm'
                     : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5'
-                }`}
+                  }`}
                 title="Dark Theme"
               >
                 <Moon size={15} />
               </button>
               <button
                 onClick={() => setTheme('system')}
-                className={`p-1.5 rounded-md transition-colors ${
-                  theme === 'system'
+                className={`p-1.5 rounded-md transition-colors ${theme === 'system'
                     ? 'bg-primary-500 text-white shadow-sm'
                     : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5'
-                }`}
+                  }`}
                 title="System Preferences"
               >
                 <Monitor size={15} />

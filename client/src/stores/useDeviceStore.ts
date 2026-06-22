@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { Device } from '../types/device';
-import { DEVICE_ID_KEY, DEVICE_NAME_KEY } from '../utils/constants';
+import { DEVICE_ID_KEY, DEVICE_NAME_KEY, DEVICE_AVATAR_KEY } from '../utils/constants';
 import { socketService } from '../services/socket';
 
 interface DeviceState {
@@ -11,6 +11,7 @@ interface DeviceState {
 
   setMyDevice: (device: Device) => void;
   updateMyName: (name: string) => void;
+  updateMyAvatar: (avatar: string) => void;
   setPeers: (peers: Device[]) => void;
   addPeer: (device: Device) => void;
   removePeer: (id: string) => void;
@@ -32,6 +33,9 @@ export const useDeviceStore = create<DeviceState>((set, get) => ({
   setMyDevice: (device) => {
     localStorage.setItem(DEVICE_ID_KEY, device.id);
     localStorage.setItem(DEVICE_NAME_KEY, device.name);
+    if (device.avatar) {
+      localStorage.setItem(DEVICE_AVATAR_KEY, device.avatar);
+    }
     set({ myDevice: device });
   },
 
@@ -41,6 +45,15 @@ export const useDeviceStore = create<DeviceState>((set, get) => ({
       localStorage.setItem(DEVICE_NAME_KEY, name);
       set({ myDevice: { ...current, name } });
       socketService.updateName(name);
+    }
+  },
+
+  updateMyAvatar: (avatar) => {
+    const current = get().myDevice;
+    if (current) {
+      localStorage.setItem(DEVICE_AVATAR_KEY, avatar);
+      set({ myDevice: { ...current, avatar } });
+      socketService.updateAvatar(avatar);
     }
   },
 

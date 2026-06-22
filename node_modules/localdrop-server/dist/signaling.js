@@ -5,12 +5,12 @@ const devices_1 = require("./devices");
 const rooms_1 = require("./rooms");
 const socketToDevice = new Map();
 const AVAILABLE_AVATARS = [
-    '/female_one.png',
-    '/female_two.png',
-    '/female_three.png',
-    '/male_one.png',
-    '/male_two.png',
-    '/male_three.png',
+    'https://res.cloudinary.com/djftsbsuu/image/upload/v1782120125/female_one_kovlkz.png',
+    'https://res.cloudinary.com/djftsbsuu/image/upload/v1782120125/female_two_ttbjn8.png',
+    'https://res.cloudinary.com/djftsbsuu/image/upload/v1782120125/female_three_jkw6mb.png',
+    'https://res.cloudinary.com/djftsbsuu/image/upload/v1782120125/male_one_imn8ct.png',
+    'https://res.cloudinary.com/djftsbsuu/image/upload/v1782120125/male_two_h6jdvb.png',
+    'https://res.cloudinary.com/djftsbsuu/image/upload/v1782120125/male_three_bfensg.png',
 ];
 function setupSignaling(io) {
     io.on('connection', (socket) => {
@@ -24,22 +24,24 @@ function setupSignaling(io) {
             // Find unused avatar in the current room
             const existingPeers = (0, rooms_1.getRoomPeers)(roomId);
             const usedAvatars = new Set(existingPeers.map((p) => p.avatar).filter(Boolean));
-            let assignedAvatar = '';
-            for (const avatar of AVAILABLE_AVATARS) {
-                if (!usedAvatars.has(avatar)) {
-                    assignedAvatar = avatar;
-                    break;
-                }
-            }
-            // Fallback: If more than 6 devices, pick one based on ID hash
+            let assignedAvatar = device.avatar || '';
             if (!assignedAvatar) {
-                const devId = device.id || socket.id;
-                let hash = 0;
-                for (let i = 0; i < devId.length; i++) {
-                    hash = devId.charCodeAt(i) + ((hash << 5) - hash);
+                for (const avatar of AVAILABLE_AVATARS) {
+                    if (!usedAvatars.has(avatar)) {
+                        assignedAvatar = avatar;
+                        break;
+                    }
                 }
-                const index = Math.abs(hash) % AVAILABLE_AVATARS.length;
-                assignedAvatar = AVAILABLE_AVATARS[index];
+                // Fallback: If more than 6 devices, pick one based on ID hash
+                if (!assignedAvatar) {
+                    const devId = device.id || socket.id;
+                    let hash = 0;
+                    for (let i = 0; i < devId.length; i++) {
+                        hash = devId.charCodeAt(i) + ((hash << 5) - hash);
+                    }
+                    const index = Math.abs(hash) % AVAILABLE_AVATARS.length;
+                    assignedAvatar = AVAILABLE_AVATARS[index];
+                }
             }
             // Generate server-side defaults if client didn't provide them
             const roomDevice = {
@@ -80,6 +82,21 @@ function setupSignaling(io) {
                 // Notify other devices in the room
                 socket.to(roomId).emit('peer-updated', peerToDeviceInfo(device));
                 console.log(`[Signaling] Device "${device.id}" updated name to "${payload.name}"`);
+            }
+        });
+        // ── Update Device Avatar ─────────────────────────────────────────────────
+        socket.on('update-avatar', (payload) => {
+            const mapping = socketToDevice.get(socket.id);
+            if (!mapping)
+                return;
+            const { deviceId, roomId } = mapping;
+            const room = (0, rooms_1.getOrCreateRoom)(roomId);
+            const device = room.devices.get(deviceId);
+            if (device) {
+                device.avatar = payload.avatar;
+                // Notify other devices in the room
+                socket.to(roomId).emit('peer-updated', peerToDeviceInfo(device));
+                console.log(`[Signaling] Device "${device.id}" updated avatar to "${payload.avatar}"`);
             }
         });
         // ── WebRTC Signaling Relay ─────────────────────────────────────────────

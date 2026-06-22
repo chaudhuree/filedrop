@@ -11,6 +11,8 @@ import ToastSystem from './components/ToastSystem';
 import QRCodePanel from './components/QRCodePanel';
 import TransferHistory from './components/TransferHistory';
 import ContextMenu from './components/ContextMenu';
+import NotificationPermissionModal from './components/NotificationPermissionModal';
+import ProfileModal from './components/ProfileModal';
 
 import { useDeviceStore } from './stores/useDeviceStore';
 import { useTransferStore } from './stores/useTransferStore';
@@ -38,6 +40,8 @@ export default function App() {
   const [showQR, setShowQR] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [showTransfers, setShowTransfers] = useState(false);
+  const [showNotifModal, setShowNotifModal] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
 
   const {
     setMyDevice,
@@ -109,8 +113,17 @@ export default function App() {
       addPeer(device);
     });
 
-    // Request notification permission
-    requestNotificationPermission();
+    // Show custom notification permission modal (only if not already granted/denied)
+    if ('Notification' in window && Notification.permission === 'default') {
+      // Small delay so the main UI loads first
+      const timer = setTimeout(() => setShowNotifModal(true), 2000);
+      return () => {
+        clearTimeout(timer);
+        socketService.leaveRoom();
+        socketService.disconnect();
+        webrtcService.destroy();
+      };
+    }
 
     return () => {
       socketService.leaveRoom();
@@ -368,6 +381,7 @@ export default function App() {
       <Header
         onShowQR={() => setShowQR(true)}
         onShowHistory={() => setShowHistory(true)}
+        onShowProfile={() => setShowProfile(true)}
       />
 
       {/* Main Content */}
@@ -427,6 +441,15 @@ export default function App() {
       <QRCodePanel isOpen={showQR} onClose={() => setShowQR(false)} />
       <TransferHistory isOpen={showHistory} onClose={() => setShowHistory(false)} />
       <ContextMenu onSendFile={handleSendFile} />
+      <NotificationPermissionModal
+        isOpen={showNotifModal}
+        onAllow={async () => {
+          setShowNotifModal(false);
+          await requestNotificationPermission();
+        }}
+        onDeny={() => setShowNotifModal(false)}
+      />
+      <ProfileModal isOpen={showProfile} onClose={() => setShowProfile(false)} />
       <ToastSystem />
     </div>
   );

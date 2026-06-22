@@ -25,6 +25,7 @@ interface JoinPayload {
     browser: string;
     os: string;
     colorHash: string;
+    avatar?: string;
   };
 }
 
@@ -37,12 +38,12 @@ interface SignalPayload {
 const socketToDevice = new Map<string, { deviceId: string; roomId: string }>();
 
 const AVAILABLE_AVATARS = [
-  '/female_one.png',
-  '/female_two.png',
-  '/female_three.png',
-  '/male_one.png',
-  '/male_two.png',
-  '/male_three.png',
+  'https://res.cloudinary.com/djftsbsuu/image/upload/v1782120125/female_one_kovlkz.png',
+  'https://res.cloudinary.com/djftsbsuu/image/upload/v1782120125/female_two_ttbjn8.png',
+  'https://res.cloudinary.com/djftsbsuu/image/upload/v1782120125/female_three_jkw6mb.png',
+  'https://res.cloudinary.com/djftsbsuu/image/upload/v1782120125/male_one_imn8ct.png',
+  'https://res.cloudinary.com/djftsbsuu/image/upload/v1782120125/male_two_h6jdvb.png',
+  'https://res.cloudinary.com/djftsbsuu/image/upload/v1782120125/male_three_bfensg.png',
 ];
 
 export function setupSignaling(io: Server): void {
@@ -63,23 +64,26 @@ export function setupSignaling(io: Server): void {
       // Find unused avatar in the current room
       const existingPeers = getRoomPeers(roomId);
       const usedAvatars = new Set(existingPeers.map((p) => p.avatar).filter(Boolean));
-      let assignedAvatar = '';
-      for (const avatar of AVAILABLE_AVATARS) {
-        if (!usedAvatars.has(avatar)) {
-          assignedAvatar = avatar;
-          break;
-        }
-      }
+      let assignedAvatar = device.avatar || '';
 
-      // Fallback: If more than 6 devices, pick one based on ID hash
       if (!assignedAvatar) {
-        const devId = device.id || socket.id;
-        let hash = 0;
-        for (let i = 0; i < devId.length; i++) {
-          hash = devId.charCodeAt(i) + ((hash << 5) - hash);
+        for (const avatar of AVAILABLE_AVATARS) {
+          if (!usedAvatars.has(avatar)) {
+            assignedAvatar = avatar;
+            break;
+          }
         }
-        const index = Math.abs(hash) % AVAILABLE_AVATARS.length;
-        assignedAvatar = AVAILABLE_AVATARS[index];
+
+        // Fallback: If more than 6 devices, pick one based on ID hash
+        if (!assignedAvatar) {
+          const devId = device.id || socket.id;
+          let hash = 0;
+          for (let i = 0; i < devId.length; i++) {
+            hash = devId.charCodeAt(i) + ((hash << 5) - hash);
+          }
+          const index = Math.abs(hash) % AVAILABLE_AVATARS.length;
+          assignedAvatar = AVAILABLE_AVATARS[index];
+        }
       }
 
       // Generate server-side defaults if client didn't provide them
@@ -129,6 +133,23 @@ export function setupSignaling(io: Server): void {
         // Notify other devices in the room
         socket.to(roomId).emit('peer-updated', peerToDeviceInfo(device));
         console.log(`[Signaling] Device "${device.id}" updated name to "${payload.name}"`);
+      }
+    });
+
+    // ── Update Device Avatar ─────────────────────────────────────────────────
+    socket.on('update-avatar', (payload: { avatar: string }) => {
+      const mapping = socketToDevice.get(socket.id);
+      if (!mapping) return;
+
+      const { deviceId, roomId } = mapping;
+      const room = getOrCreateRoom(roomId);
+      const device = room.devices.get(deviceId);
+
+      if (device) {
+        device.avatar = payload.avatar;
+        // Notify other devices in the room
+        socket.to(roomId).emit('peer-updated', peerToDeviceInfo(device));
+        console.log(`[Signaling] Device "${device.id}" updated avatar to "${payload.avatar}"`);
       }
     });
 

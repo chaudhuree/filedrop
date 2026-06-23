@@ -14,6 +14,7 @@ interface TransferState {
   addIncomingRequest: (request: FileRequest) => void;
   removeIncomingRequest: (id: string) => void;
   clearHistory: () => void;
+  deleteHistoryItem: (id: string) => void;
 }
 
 const SAVE_HISTORY_KEY = 'localdrop-transfer-history';
@@ -153,5 +154,13 @@ export const useTransferStore = create<TransferState>((set, get) => ({
   clearHistory: () => {
     saveHistory([]);
     set({ transferHistory: [] });
+  },
+
+  deleteHistoryItem: (id) => {
+    set((state) => {
+      const nextHistory = state.transferHistory.filter((item) => item.id !== id);
+      saveHistory(nextHistory);
+      return { transferHistory: nextHistory };
+    });
   },
 }));

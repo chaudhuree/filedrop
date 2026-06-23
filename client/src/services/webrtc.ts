@@ -7,6 +7,8 @@ interface PeerConnection {
   dataChannel: RTCDataChannel | null;
   pendingCandidates: RTCIceCandidate[];
   connected: boolean;
+  /** True if we are currently making an offer (used for glare resolution) */
+  makingOffer: boolean;
 }
 
 class WebRTCService {
@@ -14,13 +16,18 @@ class WebRTCService {
   private config: RTCConfiguration = {
     iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
   };
-  private myId: string = '';
+  private _myId: string = '';
   private onMessageCallback: DataChannelMessageHandler | null = null;
   private onPeerConnectedCallback: ((peerId: string) => void) | null = null;
   private onPeerDisconnectedCallback: ((peerId: string) => void) | null = null;
 
+  /** Expose myId so other services can use it for comparisons */
+  get myId(): string {
+    return this._myId;
+  }
+
   async initialize(myId: string): Promise<void> {
-    this.myId = myId;
+    this._myId = myId;
 
     // Fetch ICE server config
     try {
@@ -66,13 +73,48 @@ class WebRTCService {
     this.onPeerDisconnectedCallback = handler;
   }
 
+  /**
+   * Connect to a peer and return the DataChannel.
+   * Includes stale connection cleanup and one automatic retry.
+   */
   async connectToPeer(peerId: string): Promise<RTCDataChannel | null> {
-    // If already connected, return existing channel
+    // If already connected with an open channel, reuse it
     const existing = this.peers.get(peerId);
     if (existing?.dataChannel?.readyState === 'open') {
       return existing.dataChannel;
     }
 
+    // Clean up any stale/broken connection before creating a new one
+    if (existing) {
+      console.log(`[WebRTC] Cleaning up stale connection to ${peerId} (channel state: ${existing.dataChannel?.readyState ?? 'none'})`);
+      try { existing.dataChannel?.close(); } catch (_) { /* ignore */ }
+      try { existing.connection.close(); } catch (_) { /* ignore */ }
+      this.peers.delete(peerId);
+    }
+
+    // First attempt
+    const result = await this.attemptConnection(peerId);
+    if (result) return result;
+
+    // Retry once after a short delay
+    console.log(`[WebRTC] First connection attempt to ${peerId} failed, retrying in 2s...`);
+    await new Promise((r) => setTimeout(r, 2000));
+
+    // Clean up failed attempt
+    const failed = this.peers.get(peerId);
+    if (failed) {
+      try { failed.dataChannel?.close(); } catch (_) { /* ignore */ }
+      try { failed.connection.close(); } catch (_) { /* ignore */ }
+      this.peers.delete(peerId);
+    }
+
+    return this.attemptConnection(peerId);
+  }
+
+  /**
+   * Single connection attempt to a peer.
+   */
+  private async attemptConnection(peerId: string): Promise<RTCDataChannel | null> {
     const pc = this.createPeerConnection(peerId);
     const dc = pc.createDataChannel('localdrop', {
       ordered: true,
@@ -81,34 +123,48 @@ class WebRTCService {
     this.setupDataChannel(dc, peerId);
     const peer = this.peers.get(peerId)!;
     peer.dataChannel = dc;
+    peer.makingOffer = true;
 
     // Create and send offer
-    const offer = await pc.createOffer();
-    await pc.setLocalDescription(offer);
+    try {
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
 
-    socketService.sendSignal({
-      from: this.myId,
-      to: peerId,
-      data: { type: 'offer', sdp: offer.sdp },
-    });
+      socketService.sendSignal({
+        from: this._myId,
+        to: peerId,
+        data: { type: 'offer', sdp: offer.sdp },
+      });
+    } catch (err) {
+      console.error('[WebRTC] Failed to create/send offer:', err);
+      peer.makingOffer = false;
+      return null;
+    }
+    peer.makingOffer = false;
 
-    // Wait for connection
+    // Wait for connection with a 10s timeout
     return new Promise((resolve) => {
       const checkInterval = setInterval(() => {
-        if (dc.readyState === 'open') {
+        // Check both our created DC and any DC set by ondatachannel
+        const currentPeer = this.peers.get(peerId);
+        const currentDc = currentPeer?.dataChannel;
+        if (currentDc?.readyState === 'open') {
           clearInterval(checkInterval);
-          resolve(dc);
+          resolve(currentDc);
         }
       }, 100);
 
-      // Timeout after 15 seconds
       setTimeout(() => {
         clearInterval(checkInterval);
-        if (dc.readyState !== 'open') {
+        const currentPeer = this.peers.get(peerId);
+        const currentDc = currentPeer?.dataChannel;
+        if (currentDc?.readyState !== 'open') {
           console.error('[WebRTC] Connection timeout for peer:', peerId);
           resolve(null);
+        } else {
+          resolve(currentDc);
         }
-      }, 15000);
+      }, 10000);
     });
   }
 
@@ -163,7 +219,7 @@ class WebRTCService {
   }
 
   destroy(): void {
-    this.peers.forEach((peer, id) => {
+    this.peers.forEach((peer) => {
       peer.dataChannel?.close();
       peer.connection.close();
     });
@@ -178,13 +234,14 @@ class WebRTCService {
       dataChannel: null,
       pendingCandidates: [],
       connected: false,
+      makingOffer: false,
     };
     this.peers.set(peerId, peerState);
 
     pc.onicecandidate = (event) => {
       if (event.candidate) {
         socketService.sendSignal({
-          from: this.myId,
+          from: this._myId,
           to: peerId,
           data: {
             type: 'ice-candidate',
@@ -256,11 +313,41 @@ class WebRTCService {
     };
   }
 
+  /**
+   * Handle incoming signaling messages with glare/collision resolution.
+   * Uses the "polite peer" pattern: the peer with the lower ID is "polite"
+   * and will yield its own offer when a collision occurs.
+   */
   private async handleSignal(signal: SignalPayload): Promise<void> {
     const { from, data } = signal;
     const signalData = data as { type: string; sdp?: string; candidate?: RTCIceCandidateInit };
 
     if (signalData.type === 'offer') {
+      const existingPeer = this.peers.get(from);
+
+      // Glare detection: we have an existing connection that's in the middle of negotiation
+      const isCollision = existingPeer?.makingOffer ||
+        (existingPeer?.connection.signalingState !== 'stable' && existingPeer?.connection.signalingState !== undefined);
+
+      // The "polite" peer (lower ID) yields its own offer to accept the incoming one
+      const isPolite = this._myId < from;
+
+      if (isCollision && !isPolite) {
+        // We are the impolite peer — ignore the incoming offer (our offer takes precedence)
+        console.log(`[WebRTC] Glare detected with ${from}, ignoring incoming offer (we are impolite)`);
+        return;
+      }
+
+      if (isCollision && isPolite) {
+        // We are the polite peer — tear down our offer and accept theirs
+        console.log(`[WebRTC] Glare detected with ${from}, yielding our offer (we are polite)`);
+        if (existingPeer) {
+          try { existingPeer.dataChannel?.close(); } catch (_) { /* ignore */ }
+          try { existingPeer.connection.close(); } catch (_) { /* ignore */ }
+          this.peers.delete(from);
+        }
+      }
+
       // Received offer — create peer connection and answer
       const pc = this.createPeerConnection(from);
       await pc.setRemoteDescription(new RTCSessionDescription({
@@ -279,31 +366,43 @@ class WebRTCService {
       await pc.setLocalDescription(answer);
 
       socketService.sendSignal({
-        from: this.myId,
+        from: this._myId,
         to: from,
         data: { type: 'answer', sdp: answer.sdp },
       });
     } else if (signalData.type === 'answer') {
       const peer = this.peers.get(from);
       if (peer) {
-        await peer.connection.setRemoteDescription(new RTCSessionDescription({
-          type: 'answer',
-          sdp: signalData.sdp!,
-        }));
+        try {
+          await peer.connection.setRemoteDescription(new RTCSessionDescription({
+            type: 'answer',
+            sdp: signalData.sdp!,
+          }));
 
-        // Apply any pending candidates
-        for (const candidate of peer.pendingCandidates) {
-          await peer.connection.addIceCandidate(candidate);
+          // Apply any pending candidates
+          for (const candidate of peer.pendingCandidates) {
+            await peer.connection.addIceCandidate(candidate);
+          }
+          peer.pendingCandidates = [];
+        } catch (err) {
+          console.error(`[WebRTC] Failed to set remote answer from ${from}:`, err);
         }
-        peer.pendingCandidates = [];
       }
     } else if (signalData.type === 'ice-candidate') {
       const peer = this.peers.get(from);
+      if (!peer) {
+        // No connection yet — buffer the candidate for when a connection is established
+        return;
+      }
       const candidate = new RTCIceCandidate(signalData.candidate!);
-      if (peer?.connection.remoteDescription) {
-        await peer.connection.addIceCandidate(candidate);
-      } else if (peer) {
-        peer.pendingCandidates.push(candidate);
+      try {
+        if (peer.connection.remoteDescription) {
+          await peer.connection.addIceCandidate(candidate);
+        } else {
+          peer.pendingCandidates.push(candidate);
+        }
+      } catch (err) {
+        console.error(`[WebRTC] Failed to add ICE candidate from ${from}:`, err);
       }
     }
   }

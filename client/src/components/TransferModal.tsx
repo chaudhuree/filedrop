@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, ArrowUpRight, ArrowDownLeft } from 'lucide-react';
+import { X, ArrowUpRight, ArrowDownLeft, Trash2 } from 'lucide-react';
 import TransferProgress from './TransferProgress';
 import { useTransferStore } from '../stores/useTransferStore';
 import { useDeviceStore } from '../stores/useDeviceStore';
@@ -14,6 +14,7 @@ interface TransferModalProps {
 
 export default function TransferModal({ isOpen, onClose }: TransferModalProps) {
   const activeTransfers = useTransferStore((s) => s.activeTransfers);
+  const cancelTransferInStore = useTransferStore((s) => s.cancelTransfer);
   const transfers = Array.from(activeTransfers.values());
 
   if (!isOpen || transfers.length === 0) return null;
@@ -66,6 +67,14 @@ export default function TransferModal({ isOpen, onClose }: TransferModalProps) {
                       <span>{formatBytes(transfer.fileSize)}</span>
                     </div>
                   </div>
+                  {/* Dismiss button — always available to remove stuck entries */}
+                  <button
+                    onClick={() => cancelTransferInStore(transfer.id)}
+                    className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 transition-colors flex-shrink-0"
+                    title="Dismiss transfer"
+                  >
+                    <Trash2 size={14} className="text-gray-400 hover:text-red-400 transition-colors" />
+                  </button>
                 </div>
 
                 <TransferProgress
@@ -74,9 +83,10 @@ export default function TransferModal({ isOpen, onClose }: TransferModalProps) {
                   eta={transfer.eta}
                   bytesTransferred={transfer.bytesTransferred}
                   totalBytes={transfer.fileSize}
-                  onCancel={() =>
-                    fileTransferService.cancelTransfer(transfer.id, transfer.peerId)
-                  }
+                  onCancel={() => {
+                    fileTransferService.cancelTransfer(transfer.id, transfer.peerId);
+                    cancelTransferInStore(transfer.id);
+                  }}
                 />
               </div>
             );

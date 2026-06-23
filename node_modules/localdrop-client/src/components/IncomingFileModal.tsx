@@ -7,7 +7,11 @@ import { fileTransferService } from '../services/fileTransfer';
 import { getFileIcon } from '../utils/fileIcons';
 import { formatBytes } from '../utils/formatBytes';
 
-export default function IncomingFileModal() {
+interface IncomingFileModalProps {
+  onAccept?: () => void;
+}
+
+export default function IncomingFileModal({ onAccept }: IncomingFileModalProps) {
   const incomingRequests = useTransferStore((s) => s.incomingRequests);
   const removeIncomingRequest = useTransferStore((s) => s.removeIncomingRequest);
   const addTransfer = useTransferStore((s) => s.addTransfer);
@@ -37,6 +41,7 @@ export default function IncomingFileModal() {
       startTime: Date.now(),
     });
     removeIncomingRequest(request.transferId);
+    onAccept?.();
   };
 
   const handleDecline = () => {
@@ -109,3 +114,4 @@ export default function IncomingFileModal() {
     </div>
   );
 }
+

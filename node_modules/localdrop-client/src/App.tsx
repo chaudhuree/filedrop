@@ -219,6 +219,17 @@ export default function App() {
         `${senderName} shared ${contentType} with you`
       );
     });
+
+    // Listen for clipboard data arriving via WebSocket relay (fallback path)
+    socketService.on('clipboard-relay', (payload: unknown) => {
+      const msg = payload as {
+        senderId: string;
+        senderName: string;
+        contentType: string;
+        data: string;
+      };
+      clipboardTransferService.handleRelayMessage(msg);
+    });
   }, []);
 
   // ── Handle dropped files ─────────────────────────────────────────────
@@ -435,7 +446,7 @@ export default function App() {
 
       {/* Modals */}
       <TransferModal isOpen={showTransfers} onClose={() => setShowTransfers(false)} />
-      <IncomingFileModal />
+      <IncomingFileModal onAccept={() => setShowTransfers(true)} />
       <ClipboardSharePanel />
       <IncomingClipboardModal />
       <QRCodePanel isOpen={showQR} onClose={() => setShowQR(false)} />

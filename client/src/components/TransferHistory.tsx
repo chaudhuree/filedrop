@@ -17,7 +17,7 @@ const statusIcons = {
 };
 
 export default function TransferHistory({ isOpen, onClose }: TransferHistoryProps) {
-  const { transferHistory, clearHistory } = useTransferStore();
+  const { transferHistory, clearHistory, deleteHistoryItem } = useTransferStore();
 
   if (!isOpen) return null;
 
@@ -67,7 +67,7 @@ export default function TransferHistory({ isOpen, onClose }: TransferHistoryProp
                 return (
                   <div
                     key={transfer.id}
-                    className="flex items-center gap-3 p-3 rounded-xl bg-white/30 dark:bg-white/5 hover:bg-white/50 dark:hover:bg-white/8 transition-colors"
+                    className="flex items-center gap-3 p-3 rounded-xl bg-white/30 dark:bg-white/5 hover:bg-white/50 dark:hover:bg-white/8 transition-colors group/item"
                   >
                     <div
                       className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
@@ -96,7 +96,16 @@ export default function TransferHistory({ isOpen, onClose }: TransferHistoryProp
                         )}
                       </div>
                     </div>
-                    <StatusIcon size={16} className={statusInfo.color} />
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <StatusIcon size={16} className={statusInfo.color} />
+                      <button
+                        onClick={() => deleteHistoryItem(transfer.id)}
+                        className="p-1 rounded-md hover:bg-gray-100 dark:hover:bg-white/10 text-gray-400 hover:text-red-400 transition-colors md:opacity-0 md:group-hover/item:opacity-100"
+                        title="Remove from history"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
                   </div>
                 );
               })}

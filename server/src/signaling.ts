@@ -164,6 +164,36 @@ export function setupSignaling(io: Server): void {
       }
     });
 
+    // ── Clipboard Relay (WebSocket fallback for when WebRTC fails) ────────
+    socket.on('clipboard-relay', (payload: {
+      to: string;
+      contentType: string;
+      data: string;
+      senderName: string;
+      senderId: string;
+    }) => {
+      const { to, contentType, data, senderName, senderId } = payload;
+
+      // Size guard: reject payloads over 512 KB to prevent abuse
+      if (data.length > 512 * 1024) {
+        console.warn(`[Signaling] clipboard-relay rejected: payload too large (${data.length} bytes) from ${senderId}`);
+        return;
+      }
+
+      const targetSocketId = findSocketByDeviceId(to);
+      if (targetSocketId) {
+        io.to(targetSocketId).emit('clipboard-relay', {
+          contentType,
+          data,
+          senderName,
+          senderId,
+        });
+        console.log(`[Signaling] Relayed clipboard (${contentType}) from ${senderId} to ${to}`);
+      } else {
+        console.warn(`[Signaling] clipboard-relay: target device ${to} not found`);
+      }
+    });
+
     // ── Leave Room ─────────────────────────────────────────────────────────
     socket.on('leave-room', () => {
       handleDisconnect(socket, io);

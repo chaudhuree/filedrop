@@ -51,6 +51,8 @@ export default function ClipboardSharePanel() {
     if (!currentContent || !myDevice || selectedPeers.size === 0) return;
 
     let successCount = 0;
+    const totalCount = selectedPeers.size;
+
     for (const peerId of selectedPeers) {
       const success = await clipboardTransferService.sendClipboard(
         peerId,
@@ -62,18 +64,25 @@ export default function ClipboardSharePanel() {
       if (success) successCount++;
     }
 
-    if (successCount > 0) {
+    if (successCount === totalCount) {
       addToast({
         type: 'success',
         title: 'Clipboard sent',
         message: `Sent to ${successCount} device${successCount > 1 ? 's' : ''}`,
       });
       setContent(null);
+    } else if (successCount > 0) {
+      addToast({
+        type: 'warning',
+        title: 'Partially sent',
+        message: `Sent to ${successCount} of ${totalCount} devices. Some devices may be unreachable.`,
+      });
+      setContent(null);
     } else {
       addToast({
         type: 'error',
         title: 'Failed to send',
-        message: 'Could not reach selected devices',
+        message: 'Could not reach any selected device. Make sure they are still connected.',
       });
     }
   }, [currentContent, myDevice, selectedPeers, addToast, setContent]);

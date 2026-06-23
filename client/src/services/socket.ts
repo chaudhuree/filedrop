@@ -89,6 +89,19 @@ class SocketService {
     this.socket?.off(event, callback);
   }
 
+  /**
+   * Send clipboard data via WebSocket relay (fallback when WebRTC fails).
+   */
+  sendClipboardRelay(payload: {
+    to: string;
+    contentType: string;
+    data: string;
+    senderName: string;
+    senderId: string;
+  }): void {
+    this.socket?.emit('clipboard-relay', payload);
+  }
+
   get connected(): boolean {
     return this.socket?.connected ?? false;
   }

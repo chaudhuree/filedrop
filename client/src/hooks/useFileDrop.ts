@@ -15,6 +15,11 @@ export function useFileDrop(elementRef: React.RefObject<HTMLElement | null>): Us
   const dragCounter = useRef(0);
 
   const handleDragEnter = useCallback((e: DragEvent) => {
+    const target = e.target as HTMLElement;
+    if (target && target.closest('#clipboard-panel')) {
+      setIsDragging(false);
+      return;
+    }
     e.preventDefault();
     e.stopPropagation();
     dragCounter.current++;
@@ -24,6 +29,10 @@ export function useFileDrop(elementRef: React.RefObject<HTMLElement | null>): Us
   }, []);
 
   const handleDragLeave = useCallback((e: DragEvent) => {
+    const target = e.target as HTMLElement;
+    if (target && target.closest('#clipboard-panel')) {
+      return;
+    }
     e.preventDefault();
     e.stopPropagation();
     dragCounter.current--;
@@ -33,11 +42,22 @@ export function useFileDrop(elementRef: React.RefObject<HTMLElement | null>): Us
   }, []);
 
   const handleDragOver = useCallback((e: DragEvent) => {
+    const target = e.target as HTMLElement;
+    if (target && target.closest('#clipboard-panel')) {
+      setIsDragging(false);
+      return;
+    }
     e.preventDefault();
     e.stopPropagation();
   }, []);
 
   const handleDrop = useCallback((e: DragEvent) => {
+    const target = e.target as HTMLElement;
+    if (target && target.closest('#clipboard-panel')) {
+      dragCounter.current = 0;
+      setIsDragging(false);
+      return;
+    }
     e.preventDefault();
     e.stopPropagation();
     dragCounter.current = 0;

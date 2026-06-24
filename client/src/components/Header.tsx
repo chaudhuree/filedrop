@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Wifi, WifiOff, Edit3, QrCode, History, Clipboard, Menu, Sun, Moon, Monitor } from 'lucide-react';
+import { Wifi, WifiOff, Edit3, QrCode, History, Clipboard, Menu, Sun, Moon, Monitor, Download } from 'lucide-react';
 import ThemeToggle from './ThemeToggle';
 import { useDeviceStore } from '../stores/useDeviceStore';
 import { useClipboardStore } from '../stores/useClipboardStore';
@@ -9,9 +9,10 @@ interface HeaderProps {
   onShowQR: () => void;
   onShowHistory: () => void;
   onShowProfile: () => void;
+  onInstallPWA?: () => void;
 }
 
-export default function Header({ onShowQR, onShowHistory, onShowProfile }: HeaderProps) {
+export default function Header({ onShowQR, onShowHistory, onShowProfile, onInstallPWA }: HeaderProps) {
   const { myDevice, connected } = useDeviceStore();
   const togglePanel = useClipboardStore((s) => s.togglePanel);
   const { theme, setTheme } = useThemeStore();
@@ -125,6 +126,20 @@ export default function Header({ onShowQR, onShowHistory, onShowProfile }: Heade
             <QrCode size={18} />
           </button>
 
+          {onInstallPWA && (
+            <button
+              onClick={onInstallPWA}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white
+                bg-gradient-to-r from-primary-500 to-primary-600 shadow-md shadow-primary-500/20
+                hover:shadow-lg hover:shadow-primary-500/30 transition-all hover:scale-[1.02] active:scale-[0.98]"
+              title="Install App"
+              id="pwa-install-btn"
+            >
+              <Download size={14} />
+              <span>Install App</span>
+            </button>
+          )}
+
           <ThemeToggle />
         </div>
 
@@ -190,7 +205,21 @@ export default function Header({ onShowQR, onShowHistory, onShowProfile }: Heade
               Show QR Code
             </button>
 
-            <div className="border-t border-gray-200/50 dark:border-white/5 my-1" />
+            {onInstallPWA && (
+              <>
+                <button
+                  onClick={() => {
+                    setMenuOpen(false);
+                    onInstallPWA();
+                  }}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-primary-500 hover:bg-primary-500 hover:text-white rounded-lg transition-colors text-left font-semibold"
+                >
+                  <Download size={16} />
+                  Install App
+                </button>
+                <div className="border-t border-gray-200/50 dark:border-white/5 my-1" />
+              </>
+            )}
 
             <div className="px-3 py-1.5 text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider select-none">
               Theme Options

@@ -28,6 +28,7 @@ import { detectClipboardContentType, copyText, copyImage, copyHtml, base64ToBlob
 
 import { useDeviceIdentity } from './hooks/useDeviceIdentity';
 import { useFileDrop } from './hooks/useFileDrop';
+import { useWakeLock } from './hooks/useWakeLock';
 
 import type { Device } from './types/device';
 
@@ -37,11 +38,32 @@ export default function App() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { isDragging, droppedFiles, clearFiles } = useFileDrop(dropRef);
 
+  useWakeLock();
+
   const [showQR, setShowQR] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [showTransfers, setShowTransfers] = useState(false);
   const [showNotifModal, setShowNotifModal] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+  }, []);
+
+  const handleInstallPWA = useCallback(async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      setDeferredPrompt(null);
+    }
+  }, [deferredPrompt]);
 
   const {
     setMyDevice,
@@ -393,6 +415,7 @@ export default function App() {
         onShowQR={() => setShowQR(true)}
         onShowHistory={() => setShowHistory(true)}
         onShowProfile={() => setShowProfile(true)}
+        onInstallPWA={deferredPrompt ? handleInstallPWA : undefined}
       />
 
       {/* Main Content */}

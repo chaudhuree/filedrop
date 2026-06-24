@@ -24,6 +24,47 @@ export default function ClipboardSharePanel() {
 
   useClipboardPaste(panelOpen);
 
+  const [isDragOverZone, setIsDragOverZone] = React.useState(false);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOverZone(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOverZone(false);
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOverZone(false);
+
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      if (file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = () => {
+          setContent({
+            type: 'image',
+            data: reader.result as string,
+            size: file.size,
+          });
+        };
+        reader.readAsDataURL(file);
+      } else {
+        addToast({
+          type: 'warning',
+          title: 'Only images supported',
+          message: 'Please drop an image file to share it via clipboard.',
+        });
+      }
+    }
+  }, [setContent, addToast]);
+
   const handleToggleAutoSend = async (checked: boolean) => {
     if (checked) {
       try {
@@ -71,6 +112,7 @@ export default function ClipboardSharePanel() {
         message: `Sent to ${successCount} device${successCount > 1 ? 's' : ''}`,
       });
       setContent(null);
+      setPanel(false);
     } else if (successCount > 0) {
       addToast({
         type: 'warning',
@@ -78,6 +120,7 @@ export default function ClipboardSharePanel() {
         message: `Sent to ${successCount} of ${totalCount} devices. Some devices may be unreachable.`,
       });
       setContent(null);
+      setPanel(false);
     } else {
       addToast({
         type: 'error',
@@ -85,14 +128,25 @@ export default function ClipboardSharePanel() {
         message: 'Could not reach any selected device. Make sure they are still connected.',
       });
     }
-  }, [currentContent, myDevice, selectedPeers, addToast, setContent]);
+  }, [currentContent, myDevice, selectedPeers, addToast, setContent, setPanel]);
 
   if (!panelOpen) return null;
 
   const selectedCount = selectedPeers.size;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center modal-backdrop animate-fade-in" id="clipboard-panel">
+    <div
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center modal-backdrop animate-fade-in"
+      id="clipboard-panel"
+      onDragOver={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+      }}
+      onDrop={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+      }}
+    >
       <div className="glass-card rounded-t-2xl sm:rounded-2xl w-full sm:max-w-md sm:mx-4 animate-slide-up max-h-[85vh] overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200/50 dark:border-white/5">
@@ -111,12 +165,17 @@ export default function ClipboardSharePanel() {
         {/* Paste Zone */}
         <div className="p-5 overflow-y-auto max-h-[calc(85vh-60px)]">
           <div
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
             className={`
               relative min-h-[120px] rounded-xl border-2 border-dashed p-4
               transition-all duration-200
-              ${currentContent && currentContent.type !== 'text' && currentContent.type !== 'url'
-                ? 'border-primary-300 dark:border-primary-600 bg-primary-50/50 dark:bg-primary-500/5'
-                : 'border-gray-300 dark:border-gray-600 focus-within:border-primary-400 focus-within:ring-2 focus-within:ring-primary-500/50 bg-white/50 dark:bg-white/5'
+              ${isDragOverZone
+                ? 'border-primary-500 bg-primary-50/70 dark:bg-primary-500/10'
+                : currentContent && currentContent.type !== 'text' && currentContent.type !== 'url'
+                  ? 'border-primary-300 dark:border-primary-600 bg-primary-50/50 dark:bg-primary-500/5'
+                  : 'border-gray-300 dark:border-gray-600 focus-within:border-primary-400 focus-within:ring-2 focus-within:ring-primary-500/50 bg-white/50 dark:bg-white/5'
               }
             `}
           >

@@ -12,8 +12,20 @@ export type IncomingClipboardCallback = (
   data: string
 ) => void;
 
+interface PendingTransfer {
+  transferId: string;
+  contentType: string;
+  totalChunks: number;
+  senderName: string;
+  senderId: string;
+  chunks: Map<number, string>;
+  started: boolean;
+  ended: boolean;
+}
+
 class ClipboardTransferService {
   private onIncomingCallback: IncomingClipboardCallback | null = null;
+  private pendingTransfers: Map<string, PendingTransfer> = new Map();
 
   onIncoming(cb: IncomingClipboardCallback): void {
     this.onIncomingCallback = cb;
@@ -25,8 +37,9 @@ class ClipboardTransferService {
   handleMessage(peerId: string, message: unknown): boolean {
     if (typeof message !== 'object' || message === null) return false;
     const msg = message as Record<string, unknown>;
+    const type = msg.type as string;
 
-    if (msg.type === 'clipboard-data') {
+    if (type === 'clipboard-data') {
       this.onIncomingCallback?.(
         msg.senderId as string,
         msg.senderName as string,
@@ -36,7 +49,96 @@ class ClipboardTransferService {
       return true;
     }
 
+    if (type === 'start' || type === 'clipboard-start') {
+      const transferId = msg.transferId as string;
+      const existing = this.pendingTransfers.get(transferId);
+      if (existing) {
+        existing.contentType = msg.contentType as string;
+        existing.totalChunks = msg.totalChunks as number;
+        existing.senderName = msg.senderName as string;
+        existing.senderId = msg.senderId as string;
+        existing.started = true;
+        this.tryComplete(transferId);
+      } else {
+        this.pendingTransfers.set(transferId, {
+          transferId,
+          contentType: msg.contentType as string || 'text',
+          totalChunks: msg.totalChunks as number || 1,
+          senderName: msg.senderName as string || '',
+          senderId: msg.senderId as string || '',
+          chunks: new Map(),
+          started: true,
+          ended: false,
+        });
+      }
+      return true;
+    }
+
+    if (type === 'chunk' || type === 'clipboard-chunk') {
+      const transferId = msg.transferId as string;
+      const chunkIndex = msg.chunkIndex as number;
+      const data = msg.data as string;
+
+      let transfer = this.pendingTransfers.get(transferId);
+      if (!transfer) {
+        transfer = {
+          transferId,
+          contentType: 'text',
+          totalChunks: 1,
+          senderName: '',
+          senderId: '',
+          chunks: new Map(),
+          started: false,
+          ended: false,
+        };
+        this.pendingTransfers.set(transferId, transfer);
+      }
+      transfer.chunks.set(chunkIndex, data);
+      this.tryComplete(transferId);
+      return true;
+    }
+
+    if (type === 'end' || type === 'clipboard-end') {
+      const transferId = msg.transferId as string;
+      let transfer = this.pendingTransfers.get(transferId);
+      if (!transfer) {
+        transfer = {
+          transferId,
+          contentType: 'text',
+          totalChunks: 1,
+          senderName: '',
+          senderId: '',
+          chunks: new Map(),
+          started: false,
+          ended: false,
+        };
+        this.pendingTransfers.set(transferId, transfer);
+      }
+      transfer.ended = true;
+      this.tryComplete(transferId);
+      return true;
+    }
+
     return false;
+  }
+
+  private tryComplete(transferId: string): void {
+    const transfer = this.pendingTransfers.get(transferId);
+    if (!transfer) return;
+
+    if (transfer.ended && transfer.started && transfer.chunks.size > 0) {
+      const fullData = Array.from({ length: transfer.totalChunks }, (_, i) => 
+        transfer.chunks.get(i) || ''
+      ).join();
+      
+      this.onIncomingCallback?.(
+        transfer.senderId,
+        transfer.senderName,
+        transfer.contentType as ClipboardContentType,
+        fullData
+      );
+      this.pendingTransfers.delete(transferId);
+    }
   }
 
   /**
@@ -113,4 +215,3 @@ class ClipboardTransferService {
 }
 
 export const clipboardTransferService = new ClipboardTransferService();
-

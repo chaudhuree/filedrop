@@ -3,9 +3,9 @@ services:
     build: .
     container_name: localdrop
     ports:
-      - "3000:3000"
+      - "5566:5566"
     environment:
-      - PORT=3000
+      - PORT=5566
       - NODE_ENV=production
       - STUN_SERVERS=stun:stun.l.google.com:19302,stun:stun1.l.google.com:19302
       # Optional TURN server

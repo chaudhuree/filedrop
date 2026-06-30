@@ -1,0 +1,50 @@
+name: localdrop
+description: "Drop - Local network file sharing mobile app"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.11.5
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  socket_io_client: ^3.0.2
+  flutter_webrtc: ^0.14.1
+  file_picker: ^8.1.7
+  path_provider: ^2.1.5
+  shared_preferences: ^2.3.4
+  provider: ^6.1.2
+  cached_network_image: ^3.4.1
+  percent_indicator: ^4.2.3
+  http: ^1.3.0
+  intl: ^0.20.2
+  mime: ^2.0.0
+  share_handler: ^0.0.23
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.3
+  flutter_native_splash: ^2.4.3
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "asstes/drop_logo-withoutbg.png"
+
+flutter_native_splash:
+  color: "#ffffff"
+  image: "asstes/drop_logo-withoutbg.png"
+  android: true
+  ios: true
+  android_12:
+    color: "#ffffff"
+    image: "asstes/drop_logo-withoutbg.png"
+
+flutter:
+  uses-material-design: true
+  assets:
+    - asstes/
